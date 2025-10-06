@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hostel Feedback AI</title>
+    <!-- Link to your CSS file if you created one in the 'static' folder -->
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> -->
+
+    <!-- Basic inline CSS for quick MVP styling -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 20px;
+            background-color: #f4f7f6; /* Light background */
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 90vh;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: #ffffff; /* White background for the card */
+            padding: 30px;
+            border-radius: 12px; /* Slightly softer corners */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Softer shadow */
+            text-align: center; /* Center align text for a cleaner look */
+        }
+        h1 {
+            color: #2c3e50; /* Darker blue-grey */
+            margin-bottom: 15px;
+        }
+        p {
+            color: #555; /* Slightly lighter text */
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: calc(100% - 20px); /* Full width minus padding */
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #bdc3c7; /* Softer border */
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box; /* Include padding in width */
+        }
+        button {
+            background-color: #3498db; /* Newton Blue */
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease; /* Smooth hover effect */
+        }
+        button:hover {
+            background-color: #2980b9; /* Darker Newton Blue */
+        }
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border: 1px solid #e0e0e0; /* Lighter border */
+            border-radius: 6px;
+            background-color: #ecf0f1; /* Very light grey for results */
+            text-align: left; /* Align results to the left */
+        }
+        .result h3 {
+            margin-top: 0;
+            color: #34495e; /* Darker text for heading */
+            font-size: 1.3em;
+        }
+        .positive { color: #27ae60; font-weight: bold; } /* Green */
+        .negative { color: #e74c3c; font-weight: bold; } /* Red */
+        .neutral { color: #7f8c8d; } /* Grey */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hostel Feedback Analyzer</h1>
+        <p>Your thoughts help us improve! Let us know your feedback on hostel life.</p>
+        <textarea id="feedbackInput" rows="6" placeholder="Enter your feedback here..."></textarea>
+        <button onclick="submitFeedback()">Analyze Feedback</button>
+
+        <div id="results" class="result" style="display: none;">
+            <h3>Analysis Results:</h3>
+            <p><strong>Feedback:</strong> <span id="feedbackText"></span></p>
+            <p><strong>Sentiment:</strong> <span id="sentimentLabel"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // Step 3.1: JavaScript for Interactivity
+        function submitFeedback() {
+            // Get the text from the textarea
+            const feedback = document.getElementById('feedbackInput').value;
+
+            // Basic validation: check if the textarea is not empty
+            if (!feedback.trim()) {
+                alert("Please enter some feedback before analyzing!"); // User-friendly alert
+                return; // Stop the function if input is empty
+            }
+
+            // Now, send this feedback to our Flask backend
+            fetch('/analyze', { // '/analyze' is the route defined in app.py
+                method: 'POST', // We are sending data
+                headers: {
+                    'Content-Type': 'application/json', // Telling the server we're sending JSON
+                },
+                body: JSON.stringify({ feedback: feedback }), // Sending the feedback as a JSON object
+            })
+            .then(response => {
+                // Check if the server responded successfully (e.g., status code 200)
+                if (!response.ok) {
+                    // If not ok, throw an error to be caught by .catch()
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                // Convert the response from JSON to a JavaScript object
+                return response.json();
+            })
+            .then(data => {
+                // This is where we receive the results from Flask (sentiment analysis)
+                const resultsDiv = document.getElementById('results');
+                const sentimentLabel = document.getElementById('sentimentLabel');
+
+                // Display the original feedback text
+                document.getElementById('feedbackText').textContent = data.text;
+
+                // Set the sentiment text and add a class for styling (positive, negative, neutral)
+                sentimentLabel.textContent = data.sentiment;
+                sentimentLabel.className = data.sentiment.toLowerCase(); // e.g., 'positive', 'negative'
+
+                // Make the results div visible
+                resultsDiv.style.display = 'block';
+            })
+            .catch((error) => {
+                // If anything went wrong during the fetch or processing
+                console.error('Error:', error); // Log the error to the browser's console for debugging
+                alert('An error occurred while analyzing your feedback. Please try again later!');
+            });
+        }
+    </script>
+</body>
+</html>
